@@ -27,6 +27,8 @@ export type Segment = {
   title: string;
   status: SegmentStatus;
   cards: Card[];
+  startSec?: number;
+  endSec?: number;
 };
 
 export type Course = {

@@ -3,7 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Container, TopNav, CardShell, Pill, PrimaryButton, SecondaryLink } from "@/components/ui";
-import { getCourse, markSegmentDone, setSegmentStatus } from "@/lib/store";
+import { getStoredCourse, upsertCourse } from "@/lib/client/courseClientStore";
+import { apiCourse } from "@/lib/client/api";
+import { mapStoredCourseToClient } from "@/lib/client/courseMapper";
+import { markSegmentDone, setSegmentStatus } from "@/lib/store";
 import type { Card, McqCard } from "@/lib/types";
 import { VocabText } from "@/components/VocabPopover";
 
@@ -23,7 +26,7 @@ export default function LearnPage() {
   const courseId = params.courseId;
   const segmentIdx = Number(params.segmentIdx);
 
-  const course = useMemo(() => getCourse(courseId), [courseId]);
+  const course = useMemo(() => getStoredCourse(courseId), [courseId]);
   const seg = useMemo(() => course?.segments[segmentIdx] ?? null, [course, segmentIdx]);
 
   const [cardIdx, setCardIdx] = useState(0);
@@ -37,6 +40,16 @@ export default function LearnPage() {
     setFeedback(null);
     if (course) setSegmentStatus(course.id, segmentIdx, "in_progress");
   }, [courseId, segmentIdx, course]);
+
+  // best-effort hydrate from server too
+  useEffect(() => {
+    apiCourse(courseId)
+      .then((stored) => {
+        const mapped = mapStoredCourseToClient(stored);
+        upsertCourse(mapped);
+      })
+      .catch(() => undefined);
+  }, [courseId]);
 
   if (!course || !seg) {
     return (
@@ -95,6 +108,12 @@ export default function LearnPage() {
           <ProgressBar pct={pct} />
         </div>
       </div>
+
+      {card.type === "listen_read" && (
+        <div className="mb-4">
+          <YouTubeSegmentPlayer courseUrl={course.sourceUrl} startSec={seg.startSec ?? 0} />
+        </div>
+      )}
 
       <LearnCard
         card={card}
@@ -157,7 +176,7 @@ function LearnCard({
       <CardShell className="p-6">
         <div className="flex items-center justify-between">
           <div className="text-sm font-semibold">Listen & Read</div>
-          <span className="text-xs text-zinc-500">(audio mock)</span>
+          <span className="text-xs text-zinc-500">(YouTube)</span>
         </div>
         <div className="mt-4 text-xl leading-9">
           <VocabText text={card.text} />
@@ -199,6 +218,38 @@ function LearnCard({
 
       {/* hidden: onCheck is triggered by bottom bar */}
     </CardShell>
+  );
+}
+
+function extractYouTubeId(url: string): string | null {
+  try {
+    const u = new URL(url);
+    if (u.hostname === "youtu.be") return u.pathname.replace("/", "") || null;
+    if (u.hostname.includes("youtube.com")) {
+      return u.searchParams.get("v") || null;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function YouTubeSegmentPlayer({ courseUrl, startSec }: { courseUrl: string; startSec: number }) {
+  const vid = extractYouTubeId(courseUrl);
+  if (!vid) return null;
+
+  const src = `https://www.youtube.com/embed/${vid}?start=${Math.max(0, Math.floor(startSec))}&autoplay=0&modestbranding=1&rel=0`;
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-black">
+      <iframe
+        title="YouTube"
+        src={src}
+        className="aspect-video w-full"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+      />
+    </div>
   );
 }
 

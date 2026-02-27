@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Container, TopNav, CardShell, PrimaryButton, SecondaryLink } from "@/components/ui";
-import { createCourseFromUrl } from "@/lib/store";
+import { apiImport } from "@/lib/client/api";
 
 function isValidYouTubeOrHttpUrl(u: string) {
   try {
@@ -22,6 +22,8 @@ export default function ImportPage() {
   const router = useRouter();
   const [url, setUrl] = useState("");
   const [touched, setTouched] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const valid = useMemo(() => isValidYouTubeOrHttpUrl(url.trim()), [url]);
 
@@ -32,9 +34,7 @@ export default function ImportPage() {
       <div className="grid gap-6">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Import a YouTube link</h1>
-          <p className="mt-1 text-sm text-zinc-600">
-            MVP uses mock data. We only validate the URL on the frontend and generate a local course.
-          </p>
+          <p className="mt-1 text-sm text-zinc-600">Imports a YouTube URL on the server and stores the course under ./data/.</p>
         </div>
 
         <CardShell>
@@ -49,16 +49,25 @@ export default function ImportPage() {
           {touched && !valid && url.trim().length > 0 && (
             <div className="mt-2 text-sm text-rose-600">Please enter a valid http(s) URL.</div>
           )}
+          {error && <div className="mt-2 text-sm text-rose-600">{error}</div>}
 
           <div className="mt-4 flex items-center gap-3">
             <PrimaryButton
-              disabled={!valid}
-              onClick={() => {
-                const course = createCourseFromUrl(url.trim());
-                router.push(`/courses/${course.id}`);
+              disabled={!valid || loading}
+              onClick={async () => {
+                try {
+                  setLoading(true);
+                  setError(null);
+                  const { jobId } = await apiImport(url.trim());
+                  router.push(`/jobs/${jobId}`);
+                } catch (e: any) {
+                  setError(e?.message || String(e));
+                } finally {
+                  setLoading(false);
+                }
               }}
             >
-              Create course
+              {loading ? "Importing…" : "Import"}
             </PrimaryButton>
 
             <SecondaryLink href="/courses">View my courses</SecondaryLink>

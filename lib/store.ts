@@ -1,9 +1,10 @@
 "use client";
 
 import type { Course, CourseId } from "./types";
+// NOTE: legacy mock generator kept for reference.
 import { makeMockCourse } from "./mockData";
 
-const LS_KEY = "yeduo_mvp_courses_v1";
+const LS_KEY = "yeduo_courses_runtime_v1";
 
 type Db = {
   courses: Record<CourseId, Course>;

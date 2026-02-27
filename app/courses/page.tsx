@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { Container, TopNav, CardShell, Pill, SecondaryLink } from "@/components/ui";
-import { listCourses } from "@/lib/store";
+import { listStoredCourses } from "@/lib/client/courseClientStore";
 
 export default function CoursesPage() {
-  const courses = useMemo(() => listCourses(), []);
+  const courses = useMemo(() => listStoredCourses(), []);
 
   return (
     <Container>

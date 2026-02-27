@@ -4,7 +4,10 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Container, TopNav, CardShell, Pill, PrimaryButton, SecondaryLink } from "@/components/ui";
-import { findContinueSegment, getCourse } from "@/lib/store";
+import { findContinueSegment } from "@/lib/store";
+import { apiCourse } from "@/lib/client/api";
+import { getStoredCourse, upsertCourse } from "@/lib/client/courseClientStore";
+import { mapStoredCourseToClient } from "@/lib/client/courseMapper";
 import type { Course } from "@/lib/types";
 
 export default function CourseDetailPage() {
@@ -15,7 +18,19 @@ export default function CourseDetailPage() {
   const [course, setCourse] = useState<Course | null>(null);
 
   useEffect(() => {
-    setCourse(getCourse(courseId));
+    // hydrate from local cache first
+    setCourse(getStoredCourse(courseId));
+
+    // then fetch from server (./data)
+    apiCourse(courseId)
+      .then((stored) => {
+        const mapped = mapStoredCourseToClient(stored);
+        upsertCourse(mapped);
+        setCourse(mapped);
+      })
+      .catch(() => {
+        // ignore; keep local if any
+      });
   }, [courseId]);
 
   const continueIdx = useMemo(() => (course ? findContinueSegment(course.id) : 0), [course]);
@@ -25,7 +40,7 @@ export default function CourseDetailPage() {
       <Container>
         <TopNav />
         <CardShell>
-          <div className="text-sm text-zinc-700">Course not found.</div>
+          <div className="text-sm text-zinc-700">Course not found (or still processing).</div>
           <div className="mt-3">
             <SecondaryLink href="/courses">Back</SecondaryLink>
           </div>
