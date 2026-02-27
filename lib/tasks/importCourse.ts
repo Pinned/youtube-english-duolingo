@@ -47,7 +47,10 @@ export async function runImportTask(params: { url: string; jobId: string; course
     await update({ progress: 0.05, step: "downloading/transcribing" });
 
     const { execFile } = await import("node:child_process");
-    const ytbnotesBin = path.resolve(process.cwd(), "..", "ytbnotes", "bin", "ytbnotes.js");
+    // Locate ytbnotes CLI (repo name: youtube-bilingual-notes)
+    const ytbnotesBin =
+      process.env.YEDUO_YTBNOTES_BIN ||
+      path.resolve(process.cwd(), "..", "youtube-bilingual-notes", "bin", "ytbnotes.js");
 
     await new Promise<void>((resolve, reject) => {
       execFile(
