@@ -1,36 +1,43 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# YouTube English Duolingo (MVP)
 
-## Getting Started
+A tiny, demoable learning loop inspired by Duolingo.
 
-First, run the development server:
+## What’s included
+
+Routes:
+- `/import` (home): validate URL (frontend only) → create local mock course → redirect to course detail
+- `/courses`: course list
+- `/courses/[id]`: course detail + segment list + progress + continue button
+- `/learn/[courseId]/[segmentIdx]`: learning flow
+
+Learning interactions:
+- Card stream: **Listen & Read** → **Single-choice quiz**
+- Bottom feedback bar: **Check / Correct / Wrong / Continue**
+- Progress bar per segment
+- Tap-highlighted words for a **mock vocab popover**
+
+Data layer:
+- In-memory store + `localStorage` persistence
+- Typed models under `lib/types.ts`
+
+## Run locally
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open:
+- http://localhost:3000/import
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Demo script (2 minutes)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1) Go to `/import`
+2) Paste any URL (YouTube recommended), click **Create course**
+3) In course detail, click **Continue**
+4) In learning page:
+   - Tap highlighted words to see mock vocab
+   - For quiz card, pick an option → **Check** → **Continue**
+5) Finish segment → auto-jump to next segment; finish all → back to course detail
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+> Notes: This MVP intentionally does **not** call OpenAI, yt-dlp, or any backend. Everything is local and mock.
